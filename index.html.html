@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Leitor de Código de Barras</title>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    video {
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 500px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+    }
+    #erro {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📷 Escaneie o código de barras</h2>
+  <button onclick="ativarCamera()">Ativar câmera</button>
+  <video id="video" autoplay muted playsinline></video>
+  <div id="erro"></div>
+
+  <table id="tabela">
+    <thead>
+      <tr><th>Código</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button onclick="baixarCSV()">Exportar para Excel</button>
+
+  <script>
+    const codeReader = new ZXing.BrowserBarcodeReader();
+    const videoElement = document.getElementById('video');
+    const tabelaBody = document.querySelector('#tabela tbody');
+    const erroDiv = document.getElementById('erro');
+    let codigos = [];
+    let cameraAtiva = false;
+
+    function ativarCamera() {
+      if (cameraAtiva) return;
+      cameraAtiva = true;
+      codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+        if (result) {
+          const codigo = result.text;
+          if (!codigos.includes(codigo)) {
+            codigos.push(codigo);
+            const linha = document.createElement('tr');
+            const celula = document.createElement('td');
+            celula.textContent = codigo;
+            linha.appendChild(celula);
+            tabelaBody.appendChild(linha);
+          }
+        }
+        if (err && !(err instanceof ZXing.NotFoundException)) {
+          erroDiv.textContent = "Erro ao acessar a câmera. Verifique as permissões.";
+        }
+      }).catch(err => {
+        erroDiv.textContent = "Não foi possível ativar a câmera. Permissão negada ou navegador incompatível.";
+      });
+    }
+
+    function baixarCSV() {
+      let csv = "Código\n" + codigos.join("\n");
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'codigos.csv';
+      link.click();
+    }
+  </script>
+</body>
+</html>
